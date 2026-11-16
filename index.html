@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Картины с примеркой в интерьере — купить онлайн | Виртуальная примерка</title>
+    <meta name="description" content="Купить картину с виртуальной примеркой в интерьере. Загрузите фото, удалите фон, выберите рамку и оцените, как работа будет смотреться на вашей стене.">
+    <meta name="keywords" content="купить картину с примеркой в интерьере, виртуальная примерка картины на стену, картина в интерьере онлайн, подобрать картину к интерьеру, удаление фона с фото картины, картина с рамкой онлайн, продажа картин онлайн">
+    <!-- Подключаем interact.js для перетаскивания и изменения размера -->
+    <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.27/dist/interact.min.js"></script>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #f4f4f9; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .panel { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .flex-row { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+        .col { flex: 1; min-width: 280px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; }
+        input[type="file"] { display: block; margin-bottom: 15px; }
+        select { padding: 8px; border-radius: 6px; border: 1px solid #ccc; width: 100%; max-width: 200px; margin-bottom: 15px; }
+        button { background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .preview-box { background: #e2e8f0; border-radius: 8px; padding: 10px; display: flex; justify-content: center; align-items: center; min-height: 300px; overflow: hidden; position: relative; }
+        .preview-box img { max-width: 100%; max-height: 300px; object-fit: contain; }
+        #interiorCanvas { position: relative; width: 100%; max-width: 800px; margin: 0 auto; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); cursor: default; background: #111; }
+        #interiorCanvas img.background { display: block; width: 100%; height: auto; pointer-events: none; }
+        .artwork-wrapper { position: absolute; top: 30%; left: 30%; cursor: move; touch-action: none; transform-origin: top left; }
+        .artwork-wrapper img { display: block; max-width: 100%; height: auto; pointer-events: none; }
+        /* Стили рамок */
+        .frame-none { border: none; padding: 0; }
+        .frame-wood { border: 12px solid #8B5A2B; border-image: linear-gradient(45deg, #6b3e1b, #a66b3a, #6b3e1b) 1; padding: 4px; background: #a66b3a; box-shadow: 0 0 0 2px #4a2c12 inset; }
+        .frame-gold { border: 10px solid #d4af37; border-image: linear-gradient(135deg, #f7e08e, #b8860b, #f7e08e) 1; padding: 3px; background: #b8860b; box-shadow: 0 0 0 2px #8b6508 inset; }
+        .frame-black { border: 10px solid #1a1a1a; padding: 2px; background: #333; }
+        .frame-white { border: 10px solid #f0f0f0; padding: 2px; background: #e0e0e0; box-shadow: 0 0 0 1px #ccc inset; }
+        .status { margin-top: 10px; font-size: 0.9em; color: #555; min-height: 1.2em; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Примерка картин в интерьере</h1>
+    <p>Загрузите фотографию картины, чтобы примерить её на стену.</p>
+
+    <!-- Шаг 1: Загрузка и обработка -->
+    <div class="panel">
+        <h2>1. Загрузите картину</h2>
+        <input type="file" id="fileInput" accept="image/*">
+        <div id="statusUpload" class="status"></div>
+        <div class="flex-row" style="margin-top: 15px;">
+            <div class="col">
+                <label>Исходное фото:</label>
+                <div class="preview-box">
+                    <img id="originalPreview" alt="Исходное фото" style="display: none;">
+                    <span id="placeholderOriginal" style="color: #888;">Здесь будет фото</span>
+                </div>
+            </div>
+            <div class="col">
+                <label>Результат (без фона):</label>
+                <div class="preview-box">
+                    <img id="processedPreview" alt="Обработанное фото" style="display: none;">
+                    <span id="placeholderProcessed" style="color: #888;">Здесь будет результат</span>
+                </div>
+            </div>
+        </div>
+        <br>
+        <button id="removeBgBtn" disabled>Удалить фон</button>
+        <div id="statusBg" class="status"></div>
+    </div>
+
+    <!-- Шаг 2: Выбор рамки и примерка -->
+    <div class="panel">
+        <h2>2. Выберите рамку и примерьте в интерьере</h2>
+        <label for="frameSelect">Стиль рамки:</label>
+        <select id="frameSelect">
+            <option value="frame-none">Без рамки</option>
+            <option value="frame-wood" selected>Деревянная</option>
+            <option value="frame-gold">Золотая</option>
+            <option value="frame-black">Черная</option>
+            <option value="frame-white">Белая</option>
+        </select>
+        <p style="font-size: 0.9em; color: #555;">Перетаскивайте картину мышкой, чтобы переместить, и тяните за правый нижний угол, чтобы изменить размер.</p>
+        <div id="interiorCanvas">
+            <!-- Фоновое изображение комнаты. Вы можете заменить его на своё, изменив путь в src. -->
+            <img class="background" src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80" alt="Интерьер комнаты">
+            <div class="artwork-wrapper" id="artworkWrapper" style="display: none;">
+                <img id="artworkImage" alt="Картина в интерьере">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    // Импортируем библиотеку для удаления фона через CDN
+    import { removeBackground } from "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm";
+
+    const fileInput = document.getElementById('fileInput');
+    const originalPreview = document.getElementById('originalPreview');
+    const placeholderOriginal = document.getElementById('placeholderOriginal');
+    const processedPreview = document.getElementById('processedPreview');
+    const placeholderProcessed = document.getElementById('placeholderProcessed');
+    const removeBgBtn = document.getElementById('removeBgBtn');
+    const statusUpload = document.getElementById('statusUpload');
+    const statusBg = document.getElementById('statusBg');
+    const frameSelect = document.getElementById('frameSelect');
+    const artworkWrapper = document.getElementById('artworkWrapper');
+    const artworkImage = document.getElementById('artworkImage');
+
+    let currentOriginalImage = null; // HTMLImageElement
+    let currentProcessedDataUrl = null;
+
+    // --- Шаг 1: Загрузка файла ---
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            originalPreview.src = event.target.result;
+            originalPreview.style.display = 'block';
+            placeholderOriginal.style.display = 'none';
+
+            currentOriginalImage = new Image();
+            currentOriginalImage.onload = () => {
+                removeBgBtn.disabled = false;
+                statusUpload.textContent = 'Файл загружен. Нажмите "Удалить фон".';
+                // Сброс предыдущего результата
+                currentProcessedDataUrl = null;
+                processedPreview.style.display = 'none';
+                placeholderProcessed.style.display = 'inline';
+                artworkWrapper.style.display = 'none';
+                statusBg.textContent = '';
+            };
+            currentOriginalImage.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // --- Шаг 2: Удаление фона ---
+    removeBgBtn.addEventListener('click', async () => {
+        if (!currentOriginalImage) return;
+
+        removeBgBtn.disabled = true;
+        statusBg.textContent = 'Обработка... Это может занять до минуты при первом запуске (загружается модель).';
+        
+        try {
+            // Вызываем removeBackground, передавая Data URL изображения
+            const blob = await removeBackground(currentOriginalImage.src);
+            // Создаем URL для отображения
+            const url = URL.createObjectURL(blob);
+            
+            processedPreview.src = url;
+            processedPreview.style.display = 'block';
+            placeholderProcessed.style.display = 'none';
+            
+            // Сохраняем Data URL для использования в интерьере
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                currentProcessedDataUrl = reader.result;
+                // Показываем картину в интерьере
+                artworkImage.src = currentProcessedDataUrl;
+                artworkWrapper.style.display = 'block';
+                // Сброс позиции
+                resetArtworkPosition();
+                statusBg.textContent = 'Готово! Картина обработана и добавлена в предпросмотр.';
+                removeBgBtn.disabled = false;
+            };
+            reader.readAsDataURL(blob);
+            
+        } catch (error) {
+            console.error(error);
+            statusBg.textContent = 'Ошибка при удалении фона. Попробуйте другое фото или повторите позже.';
+            removeBgBtn.disabled = false;
+        }
+    });
+
+    // --- Шаг 3: Управление рамкой ---
+    frameSelect.addEventListener('change', () => {
+        // Удаляем все классы рамок
+        artworkWrapper.className = 'artwork-wrapper';
+        // Добавляем выбранный класс
+        artworkWrapper.classList.add(frameSelect.value);
+    });
+
+    // --- Шаг 4: Перетаскивание и изменение размера (interact.js) ---
+    function resetArtworkPosition() {
+        // Начальная позиция и размер (относительные)
+        const canvas = document.getElementById('interiorCanvas');
+        const rect = canvas.getBoundingClientRect();
+        // Устанавливаем начальный размер примерно 30% ширины комнаты
+        const initialWidth = rect.width * 0.3;
+        
+        artworkWrapper.style.width = initialWidth + 'px';
+        artworkWrapper.style.left = '35%';
+        artworkWrapper.style.top = '30%';
+    }
+
+    interact('.artwork-wrapper')
+        .draggable({
+            listeners: {
+                move(event) {
+                    const target = event.target;
+                    const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                    const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+                    target.style.transform = `translate(${x}px, ${y}px)`;
+                    target.setAttribute('data-x', x);
+                    target.setAttribute('data-y', y);
+                }
+            },
+            modifiers: [
+                // Ограничиваем перемещение пределами родительского контейнера
+                interact.modifiers.restrictRect({
+                    restriction: 'parent',
+                    endOnly: true
+                })
+            ]
+        })
+        .resizable({
+            edges: { left: false, right: true, bottom: true, top: false }, // Тянем только за правый нижний угол
+            listeners: {
+                move(event) {
+                    const target = event.target;
+                    let x = (parseFloat(target.getAttribute('data-x')) || 0);
+                    let y = (parseFloat(target.getAttribute('data-y')) || 0);
+
+                    target.style.width = event.rect.width + 'px';
+                    target.style.height = event.rect.height + 'px'; // Сохраняем пропорции
+
+                    x += event.deltaRect.left;
+                    y += event.deltaRect.top;
+
+                    target.style.transform = `translate(${x}px, ${y}px)`;
+                    target.setAttribute('data-x', x);
+                    target.setAttribute('data-y', y);
+                }
+            },
+            modifiers: [
+                // Сохраняем пропорции изображения
+                interact.modifiers.aspectRatio({
+                    ratio: 'preserve'
+                }),
+                // Ограничиваем изменение размера родителем
+                interact.modifiers.restrictSize({
+                    min: { width: 50, height: 50 }
+                })
+            ],
+            inertia: true
+        });
+</script>
+</body>
+</html>
