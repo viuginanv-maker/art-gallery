@@ -6,8 +6,12 @@
     <title>Картины с примеркой в интерьере — купить онлайн | Виртуальная примерка</title>
     <meta name="description" content="Купить картину с виртуальной примеркой в интерьере. Загрузите фото, удалите фон, выберите рамку и оцените, как работа будет смотреться на вашей стене.">
     <meta name="keywords" content="купить картину с примеркой в интерьере, виртуальная примерка картины на стену, картина в интерьере онлайн, подобрать картину к интерьеру, удаление фона с фото картины, картина с рамкой онлайн, продажа картин онлайн">
-    <!-- Подключаем interact.js для перетаскивания и изменения размера -->
+    
+    <!-- Подключаем interact.js для перетаскивания -->
     <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.27/dist/interact.min.js"></script>
+    <!-- Подключаем библиотеку для конвертации HEIC в JPG -->
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+    
     <style>
         body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #f4f4f9; color: #333; }
         .container { max-width: 1000px; margin: 0 auto; }
@@ -78,7 +82,6 @@
         </select>
         <p style="font-size: 0.9em; color: #555;">Перетаскивайте картину мышкой, чтобы переместить, и тяните за правый нижний угол, чтобы изменить размер.</p>
         <div id="interiorCanvas">
-            <!-- Фоновое изображение комнаты. Вы можете заменить его на своё, изменив путь в src. -->
             <img class="background" src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80" alt="Интерьер комнаты">
             <div class="artwork-wrapper" id="artworkWrapper" style="display: none;">
                 <img id="artworkImage" alt="Картина в интерьере">
@@ -88,7 +91,6 @@
 </div>
 
 <script type="module">
-    // Импортируем библиотеку для удаления фона через CDN
     import { removeBackground } from "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm";
 
     const fileInput = document.getElementById('fileInput');
@@ -103,13 +105,39 @@
     const artworkWrapper = document.getElementById('artworkWrapper');
     const artworkImage = document.getElementById('artworkImage');
 
-    let currentOriginalImage = null; // HTMLImageElement
+    let currentOriginalImage = null;
     let currentProcessedDataUrl = null;
 
-    // --- Шаг 1: Загрузка файла ---
-    fileInput.addEventListener('change', (e) => {
+    // --- Шаг 1: Загрузка файла (с конвертацией HEIC) ---
+    fileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
+
+        removeBgBtn.disabled = true;
+        statusUpload.textContent = 'Загрузка файла...';
+        statusBg.textContent = '';
+
+        let fileToProcess = file;
+
+        // Проверяем, является ли файл HEIC/HEIF (формат iPhone)
+        if (file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif') {
+            statusUpload.textContent = 'Обнаружен формат HEIC. Конвертируем в JPG, подождите...';
+            try {
+                // Конвертируем HEIC в JPG прямо в браузере
+                const conversionResult = await heic2any({
+                    blob: file,
+                    toType: "image/jpeg",
+                    quality: 0.9
+                });
+                // Если в файле несколько фото, берем первое
+                fileToProcess = Array.isArray(conversionResult) ? conversionResult[0] : conversionResult;
+                statusUpload.textContent = 'Конвертация завершена. Читаем файл...';
+            } catch (error) {
+                console.error("Ошибка конвертации HEIC:", error);
+                statusUpload.textContent = 'Ошибка при конвертации фото с iPhone. Попробуйте пересохранить фото в JPG.';
+                return;
+            }
+        }
 
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -120,17 +148,21 @@
             currentOriginalImage = new Image();
             currentOriginalImage.onload = () => {
                 removeBgBtn.disabled = false;
-                statusUpload.textContent = 'Файл загружен. Нажмите "Удалить фон".';
+                statusUpload.textContent = 'Файл успешно загружен. Нажмите "Удалить фон".';
+                
                 // Сброс предыдущего результата
                 currentProcessedDataUrl = null;
                 processedPreview.style.display = 'none';
                 placeholderProcessed.style.display = 'inline';
                 artworkWrapper.style.display = 'none';
-                statusBg.textContent = '';
+            };
+            currentOriginalImage.onerror = () => {
+                statusUpload.textContent = 'Ошибка чтения изображения.';
+                removeBgBtn.disabled = true;
             };
             currentOriginalImage.src = event.target.result;
         };
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(fileToProcess);
     });
 
     // --- Шаг 2: Удаление фона ---
@@ -138,26 +170,21 @@
         if (!currentOriginalImage) return;
 
         removeBgBtn.disabled = true;
-        statusBg.textContent = 'Обработка... Это может занять до минуты при первом запуске (загружается модель).';
+        statusBg.textContent = 'Обработка... Это может занять до минуты при первом запуске (загружается нейросеть).';
         
         try {
-            // Вызываем removeBackground, передавая Data URL изображения
             const blob = await removeBackground(currentOriginalImage.src);
-            // Создаем URL для отображения
             const url = URL.createObjectURL(blob);
             
             processedPreview.src = url;
             processedPreview.style.display = 'block';
             placeholderProcessed.style.display = 'none';
             
-            // Сохраняем Data URL для использования в интерьере
             const reader = new FileReader();
             reader.onloadend = () => {
                 currentProcessedDataUrl = reader.result;
-                // Показываем картину в интерьере
                 artworkImage.src = currentProcessedDataUrl;
                 artworkWrapper.style.display = 'block';
-                // Сброс позиции
                 resetArtworkPosition();
                 statusBg.textContent = 'Готово! Картина обработана и добавлена в предпросмотр.';
                 removeBgBtn.disabled = false;
@@ -173,20 +200,15 @@
 
     // --- Шаг 3: Управление рамкой ---
     frameSelect.addEventListener('change', () => {
-        // Удаляем все классы рамок
         artworkWrapper.className = 'artwork-wrapper';
-        // Добавляем выбранный класс
         artworkWrapper.classList.add(frameSelect.value);
     });
 
-    // --- Шаг 4: Перетаскивание и изменение размера (interact.js) ---
+    // --- Шаг 4: Перетаскивание и изменение размера ---
     function resetArtworkPosition() {
-        // Начальная позиция и размер (относительные)
         const canvas = document.getElementById('interiorCanvas');
         const rect = canvas.getBoundingClientRect();
-        // Устанавливаем начальный размер примерно 30% ширины комнаты
         const initialWidth = rect.width * 0.3;
-        
         artworkWrapper.style.width = initialWidth + 'px';
         artworkWrapper.style.left = '35%';
         artworkWrapper.style.top = '30%';
@@ -205,7 +227,6 @@
                 }
             },
             modifiers: [
-                // Ограничиваем перемещение пределами родительского контейнера
                 interact.modifiers.restrictRect({
                     restriction: 'parent',
                     endOnly: true
@@ -213,7 +234,7 @@
             ]
         })
         .resizable({
-            edges: { left: false, right: true, bottom: true, top: false }, // Тянем только за правый нижний угол
+            edges: { left: false, right: true, bottom: true, top: false },
             listeners: {
                 move(event) {
                     const target = event.target;
@@ -221,7 +242,7 @@
                     let y = (parseFloat(target.getAttribute('data-y')) || 0);
 
                     target.style.width = event.rect.width + 'px';
-                    target.style.height = event.rect.height + 'px'; // Сохраняем пропорции
+                    target.style.height = event.rect.height + 'px';
 
                     x += event.deltaRect.left;
                     y += event.deltaRect.top;
@@ -232,11 +253,9 @@
                 }
             },
             modifiers: [
-                // Сохраняем пропорции изображения
                 interact.modifiers.aspectRatio({
                     ratio: 'preserve'
                 }),
-                // Ограничиваем изменение размера родителем
                 interact.modifiers.restrictSize({
                     min: { width: 50, height: 50 }
                 })
