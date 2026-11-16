@@ -7,15 +7,26 @@
     <meta name="description" content="Купить картину с виртуальной примеркой в интерьере. Загрузите фото, удалите фон, выберите рамку и оцените, как работа будет смотреться на вашей стене.">
     <meta name="keywords" content="купить картину с примеркой в интерьере, виртуальная примерка картины на стену, картина в интерьере онлайн, подобрать картину к интерьеру, удаление фона с фото картины, картина с рамкой онлайн, продажа картин онлайн">
     
-    <!-- Подключаем interact.js для перетаскивания -->
     <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.27/dist/interact.min.js"></script>
-    <!-- Подключаем библиотеку для конвертации HEIC в JPG -->
-    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
     
     <style>
         body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #f4f4f9; color: #333; }
-        .container { max-width: 1000px; margin: 0 auto; }
+        .container { max-width: 1100px; margin: 0 auto; }
         .panel { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        
+        /* --- Стили для каталога --- */
+        .catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; margin-top: 15px; }
+        .card { border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: #fff; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .card-img { width: 100%; height: 220px; object-fit: cover; background: #f8f9fa; }
+        .card-body { padding: 15px; display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
+        .card-title { font-weight: bold; font-size: 1.1em; margin: 0; }
+        .card-price { color: #2563eb; font-weight: bold; font-size: 1.2em; }
+        .card-details { font-size: 0.85em; color: #64748b; }
+        .card-btn { margin-top: auto; width: 100%; background: #10b981; margin-top: 10px; }
+        .card-btn:hover { background: #059669; }
+
+        /* --- Остальные стили --- */
         .flex-row { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
         .col { flex: 1; min-width: 280px; }
         label { display: block; margin-bottom: 8px; font-weight: 600; }
@@ -29,7 +40,6 @@
         #interiorCanvas img.background { display: block; width: 100%; height: auto; pointer-events: none; }
         .artwork-wrapper { position: absolute; top: 30%; left: 30%; cursor: move; touch-action: none; transform-origin: top left; }
         .artwork-wrapper img { display: block; max-width: 100%; height: auto; pointer-events: none; }
-        /* Стили рамок */
         .frame-none { border: none; padding: 0; }
         .frame-wood { border: 12px solid #8B5A2B; border-image: linear-gradient(45deg, #6b3e1b, #a66b3a, #6b3e1b) 1; padding: 4px; background: #a66b3a; box-shadow: 0 0 0 2px #4a2c12 inset; }
         .frame-gold { border: 10px solid #d4af37; border-image: linear-gradient(135deg, #f7e08e, #b8860b, #f7e08e) 1; padding: 3px; background: #b8860b; box-shadow: 0 0 0 2px #8b6508 inset; }
@@ -40,12 +50,22 @@
 </head>
 <body>
 <div class="container">
-    <h1>Примерка картин в интерьере</h1>
-    <p>Загрузите фотографию картины, чтобы примерить её на стену.</p>
-
-    <!-- Шаг 1: Загрузка и обработка -->
+    <h1>Галерея картин</h1>
+    
+    <!-- КАТАЛОГ КАРТИН -->
     <div class="panel">
-        <h2>1. Загрузите картину</h2>
+        <h2>Мои работы</h2>
+        <div id="catalogGrid" class="catalog-grid">
+            <!-- Сюда автоматически подтянутся картины из кода -->
+        </div>
+    </div>
+
+    <h1 style="margin-top: 40px;">Примерка в интерьере</h1>
+    <p>Выберите картину из каталога выше или загрузите свое фото.</p>
+
+    <!-- ПРИМЕРОЧНАЯ -->
+    <div class="panel">
+        <h2>1. Выбранная картина</h2>
         <input type="file" id="fileInput" accept="image/*">
         <div id="statusUpload" class="status"></div>
         <div class="flex-row" style="margin-top: 15px;">
@@ -69,9 +89,8 @@
         <div id="statusBg" class="status"></div>
     </div>
 
-    <!-- Шаг 2: Выбор рамки и примерка -->
     <div class="panel">
-        <h2>2. Выберите рамку и примерьте в интерьере</h2>
+        <h2>2. Настройте рамку и примерьте</h2>
         <label for="frameSelect">Стиль рамки:</label>
         <select id="frameSelect">
             <option value="frame-none">Без рамки</option>
@@ -80,7 +99,6 @@
             <option value="frame-black">Черная</option>
             <option value="frame-white">Белая</option>
         </select>
-        <p style="font-size: 0.9em; color: #555;">Перетаскивайте картину мышкой, чтобы переместить, и тяните за правый нижний угол, чтобы изменить размер.</p>
         <div id="interiorCanvas">
             <img class="background" src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80" alt="Интерьер комнаты">
             <div class="artwork-wrapper" id="artworkWrapper" style="display: none;">
@@ -93,6 +111,96 @@
 <script type="module">
     import { removeBackground } from "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm";
 
+    // ==========================================
+    // БАЗА ВАШИХ КАРТИН (Каталог)
+    // ==========================================
+    // Чтобы добавить картину, скопируйте блок { ... } и вставьте ниже, изменив данные.
+    // Ссылки на картинки лучше загрузить в этот же репозиторий на GitHub и указать имя файла (например, "kartina1.jpg").
+    
+    const paintings = [
+        {
+            id: 1,
+            title: "Горный пейзаж",
+            price: "15 000 ₽",
+            size: "600 × 800 мм",
+            medium: "Холст, масло",
+            // Для теста используется картинка из интернета. Замените на свою!
+            imageUrl: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
+        },
+        {
+            id: 2,
+            title: "Абстракция №4",
+            price: "8 500 ₽",
+            size: "400 × 400 мм",
+            medium: "Акрил",
+            imageUrl: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
+        },
+        {
+            id: 3,
+            title: "Утренний туман",
+            price: "12 000 ₽",
+            size: "500 × 700 мм",
+            medium: "Смешанная техника",
+            imageUrl: "https://images.unsplash.com/photo-1515405295579-ba7b45403062?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
+        }
+    ];
+
+    // --- Генерация каталога на странице ---
+    const catalogGrid = document.getElementById('catalogGrid');
+    
+    function renderCatalog() {
+        catalogGrid.innerHTML = paintings.map(p => `
+            <div class="card">
+                <img src="${p.imageUrl}" alt="${p.title}" class="card-img">
+                <div class="card-body">
+                    <h3 class="card-title">${p.title}</h3>
+                    <div class="card-price">${p.price}</div>
+                    <div class="card-details">📏 ${p.size}</div>
+                    <div class="card-details">🎨 ${p.medium}</div>
+                    <button class="card-btn" onclick="loadFromCatalog('${p.imageUrl}')">Примерить на стену</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    renderCatalog(); // Запускаем отрисовку при загрузке
+
+    // --- Функция загрузки картины из каталога ---
+    window.loadFromCatalog = function(imageUrl) {
+        // Прокручиваем страницу к примерочной
+        document.getElementById('removeBgBtn').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Очищаем статусы
+        statusBg.textContent = '';
+        removeBgBtn.disabled = true;
+        statusUpload.textContent = 'Загрузка картины из каталога...';
+        
+        // Эмулируем загрузку
+        const img = new Image();
+        img.crossOrigin = "anonymous"; // Важно для обработки внешних ссылок
+        img.onload = () => {
+            originalPreview.src = imageUrl;
+            originalPreview.style.display = 'block';
+            placeholderOriginal.style.display = 'none';
+            
+            currentOriginalImage = img;
+            removeBgBtn.disabled = false;
+            statusUpload.textContent = 'Картина загружена. Нажмите "Удалить фон".';
+            
+            // Сброс предыдущего результата
+            processedPreview.style.display = 'none';
+            placeholderProcessed.style.display = 'inline';
+            artworkWrapper.style.display = 'none';
+        };
+        img.onerror = () => {
+            statusUpload.textContent = 'Ошибка загрузки картинки из каталога.';
+        };
+        img.src = imageUrl;
+    };
+
+    // ==========================================
+    // ДАЛЬШЕ ИДЕТ ЛОГИКА ПРИМЕРОЧНОЙ
+    // ==========================================
     const fileInput = document.getElementById('fileInput');
     const originalPreview = document.getElementById('originalPreview');
     const placeholderOriginal = document.getElementById('placeholderOriginal');
@@ -106,9 +214,7 @@
     const artworkImage = document.getElementById('artworkImage');
 
     let currentOriginalImage = null;
-    let currentProcessedDataUrl = null;
 
-    // --- Шаг 1: Загрузка файла (с конвертацией HEIC) ---
     fileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -119,22 +225,16 @@
 
         let fileToProcess = file;
 
-        // Проверяем, является ли файл HEIC/HEIF (формат iPhone)
         if (file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif') {
             statusUpload.textContent = 'Обнаружен формат HEIC. Конвертируем в JPG, подождите...';
             try {
-                // Конвертируем HEIC в JPG прямо в браузере
-                const conversionResult = await heic2any({
-                    blob: file,
-                    toType: "image/jpeg",
-                    quality: 0.9
-                });
-                // Если в файле несколько фото, берем первое
-                fileToProcess = Array.isArray(conversionResult) ? conversionResult[0] : conversionResult;
+                const { heicTo } = await import('https://cdn.jsdelivr.net/npm/heic-to@1.6.6/+esm');
+                const convertedBlob = await heicTo({ blob: file, type: 'image/jpeg', quality: 0.9 });
+                fileToProcess = convertedBlob;
                 statusUpload.textContent = 'Конвертация завершена. Читаем файл...';
             } catch (error) {
                 console.error("Ошибка конвертации HEIC:", error);
-                statusUpload.textContent = 'Ошибка при конвертации фото с iPhone. Попробуйте пересохранить фото в JPG.';
+                statusUpload.textContent = 'Не удалось автоматически конвертировать фото. Пересохраните его в JPG.';
                 return;
             }
         }
@@ -148,29 +248,21 @@
             currentOriginalImage = new Image();
             currentOriginalImage.onload = () => {
                 removeBgBtn.disabled = false;
-                statusUpload.textContent = 'Файл успешно загружен. Нажмите "Удалить фон".';
-                
-                // Сброс предыдущего результата
-                currentProcessedDataUrl = null;
+                statusUpload.textContent = 'Файл загружен. Нажмите "Удалить фон".';
                 processedPreview.style.display = 'none';
                 placeholderProcessed.style.display = 'inline';
                 artworkWrapper.style.display = 'none';
-            };
-            currentOriginalImage.onerror = () => {
-                statusUpload.textContent = 'Ошибка чтения изображения.';
-                removeBgBtn.disabled = true;
             };
             currentOriginalImage.src = event.target.result;
         };
         reader.readAsDataURL(fileToProcess);
     });
 
-    // --- Шаг 2: Удаление фона ---
     removeBgBtn.addEventListener('click', async () => {
         if (!currentOriginalImage) return;
 
         removeBgBtn.disabled = true;
-        statusBg.textContent = 'Обработка... Это может занять до минуты при первом запуске (загружается нейросеть).';
+        statusBg.textContent = 'Обработка... Подождите (загружается нейросеть).';
         
         try {
             const blob = await removeBackground(currentOriginalImage.src);
@@ -182,34 +274,30 @@
             
             const reader = new FileReader();
             reader.onloadend = () => {
-                currentProcessedDataUrl = reader.result;
-                artworkImage.src = currentProcessedDataUrl;
+                artworkImage.src = reader.result;
                 artworkWrapper.style.display = 'block';
                 resetArtworkPosition();
-                statusBg.textContent = 'Готово! Картина обработана и добавлена в предпросмотр.';
+                statusBg.textContent = 'Готово! Картина добавлена в предпросмотр.';
                 removeBgBtn.disabled = false;
             };
             reader.readAsDataURL(blob);
             
         } catch (error) {
             console.error(error);
-            statusBg.textContent = 'Ошибка при удалении фона. Попробуйте другое фото или повторите позже.';
+            statusBg.textContent = 'Ошибка при удалении фона.';
             removeBgBtn.disabled = false;
         }
     });
 
-    // --- Шаг 3: Управление рамкой ---
     frameSelect.addEventListener('change', () => {
         artworkWrapper.className = 'artwork-wrapper';
         artworkWrapper.classList.add(frameSelect.value);
     });
 
-    // --- Шаг 4: Перетаскивание и изменение размера ---
     function resetArtworkPosition() {
         const canvas = document.getElementById('interiorCanvas');
         const rect = canvas.getBoundingClientRect();
-        const initialWidth = rect.width * 0.3;
-        artworkWrapper.style.width = initialWidth + 'px';
+        artworkWrapper.style.width = (rect.width * 0.3) + 'px';
         artworkWrapper.style.left = '35%';
         artworkWrapper.style.top = '30%';
     }
@@ -226,12 +314,7 @@
                     target.setAttribute('data-y', y);
                 }
             },
-            modifiers: [
-                interact.modifiers.restrictRect({
-                    restriction: 'parent',
-                    endOnly: true
-                })
-            ]
+            modifiers: [interact.modifiers.restrictRect({ restriction: 'parent', endOnly: true })]
         })
         .resizable({
             edges: { left: false, right: true, bottom: true, top: false },
@@ -240,27 +323,19 @@
                     const target = event.target;
                     let x = (parseFloat(target.getAttribute('data-x')) || 0);
                     let y = (parseFloat(target.getAttribute('data-y')) || 0);
-
                     target.style.width = event.rect.width + 'px';
                     target.style.height = event.rect.height + 'px';
-
                     x += event.deltaRect.left;
                     y += event.deltaRect.top;
-
                     target.style.transform = `translate(${x}px, ${y}px)`;
                     target.setAttribute('data-x', x);
                     target.setAttribute('data-y', y);
                 }
             },
             modifiers: [
-                interact.modifiers.aspectRatio({
-                    ratio: 'preserve'
-                }),
-                interact.modifiers.restrictSize({
-                    min: { width: 50, height: 50 }
-                })
-            ],
-            inertia: true
+                interact.modifiers.aspectRatio({ ratio: 'preserve' }),
+                interact.modifiers.restrictSize({ min: { width: 50, height: 50 } })
+            ]
         });
 </script>
 </body>
